@@ -8,6 +8,7 @@ export class Cooldown<T> {
   public constructor(
     standbyTime: number,
     requestCountPerTime: number,
+    private readonly persistent = false,
   ) {
     if (standbyTime <= 0) throw new Error("standbyTime must be positive");
     if (requestCountPerTime <= 0) {
@@ -26,19 +27,34 @@ export class Cooldown<T> {
       }
       return false;
     } else {
-      this.cache.set(
-        id,
-        new CooldownState(
-          Date.now() + this.standyByTime,
-          this.requestCountPerTime,
-        ),
-      );
-
-      setTimeout(() => {
-        this.cache.delete(id);
-      }, this.standyByTime);
-
-      return false;
+      return this.add(id);
     }
+  }
+
+  private add(id: T) {
+    this.cache.set(
+      id,
+      new CooldownState(
+        Date.now() + this.standyByTime,
+        this.requestCountPerTime,
+      ),
+    );
+
+    const i = setTimeout(() => {
+      this.cache.delete(id);
+    }, this.standyByTime);
+
+    if (!this.persistent) {
+      try {
+        Deno.unrefTimer(i);
+      } catch (err) {
+        if (!(err instanceof ReferenceError)) {
+          throw err;
+        }
+        console.error("Deno.unrefTimer is not available");
+      }
+    }
+
+    return false;
   }
 }
