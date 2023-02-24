@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import { Cooldown } from "./main.ts";
+import { Cooldown } from "./mod.ts";
 
 const cooldown = new Cooldown(1000 * 10, 5);
 const ID = "test";
